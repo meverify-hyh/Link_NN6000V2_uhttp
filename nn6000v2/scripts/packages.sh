@@ -163,16 +163,9 @@ clone_lucky() {
 }
 
 clone_adguardhome() {
-    local temp_dir="$OPENWRT_PACKAGES_DIR/adguardhome-temp"
     clone_packages "luci-app-adguardhome" \
-        "${GITHUB_BASE}xiaoxiao29/luci-app-adguardhome.git" \
-        "$temp_dir" \
-        "luci-app-adguardhome" \
-        "" \
-        "" \
-        "$temp_dir/luci-app-adguardhome" \
+        "${GITHUB_BASE}wzdddyy/luci-app-adguardhome.git" \
         "$OPENWRT_PACKAGES_DIR/luci-app-adguardhome"
-    rm -rf "$temp_dir"
 }
 
 clone_zerotier() {
