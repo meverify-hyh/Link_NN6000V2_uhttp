@@ -126,7 +126,7 @@ modify_kernel_size() {
 modify_kernel_size
 
 cd "$BASE_PATH/../$BUILD_DIR"
-make defconfig# Fix glib2 libffi dependency (removed in immortalwrt master)sed -i 's/+libffi//g' feeds/packages/libs/glib2/Makefile
+# Fix glib2 libffi dependency
 
 if [[ $Build_Mod == "debug" ]]; then
     exit 0
@@ -175,7 +175,7 @@ if [[ "$Dev" != *"nowifi"* ]]; then
     sed -i 's/^CONFIG_PACKAGE_ath11k-firmware-qcn9074-ddwrt=y$/CONFIG_PACKAGE_ath11k-firmware-qcn9074-ddwrt=n/' "$CONFIG_FILE"
     
     cp -f "$CONFIG_FILE" .config
-    make defconfig# Fix glib2 libffi dependency (removed in immortalwrt master)sed -i 's/+libffi//g' feeds/packages/libs/glib2/Makefile
+    sed -i 's/+libffi//g' feeds/packages/libs/glib2/Makefile
     
     echo "编译无 WiFi 版本..."
     make -j$(($(nproc) + 1)) || make -j1 V=s
