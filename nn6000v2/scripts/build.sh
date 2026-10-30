@@ -126,10 +126,11 @@ modify_kernel_size() {
 modify_kernel_size
 
 cd "$BASE_PATH/../$BUILD_DIR"
-
-# 不要删 glib2 的 +libffi 依赖：glib2-gobject 实际链接 libffi.so.8，
-# 删掉依赖只会在打包阶段报 "missing dependencies for the following libraries: libffi.so.8" 并中断编译。
-# 正确做法是保留依赖，并确保 CONFIG_PACKAGE_libffi=y（configs 里已有）。
+# Fix glib2 libffi dependency: remove libffi from DEPENDS and disable ffi in meson
+sed -i 's/+libffi//g' feeds/packages/libs/glib2/Makefile
+sed -i 's/HOST_BUILD_DEPENDS:=pcre2\/host libffi\/host libiconv-full\/host/HOST_BUILD_DEPENDS:=pcre2\/host libiconv-full\/host/' feeds/packages/libs/glib2/Makefile
+sed -i 's/MESON_ARGS += $(COMP_ARGS)/MESON_ARGS += $(COMP_ARGS) -Dffi=disabled/' feeds/packages/libs/glib2/Makefile
+sed -i 's/^CONFIG_PACKAGE_libffi=.*/# CONFIG_PACKAGE_libffi is not set/' .config
 
 # Fix recursive dependency issues (scripts/config is a directory in this tree, use sed instead)
 sed -i 's/^CONFIG_PACKAGE_luci-app-homeproxy=.*/# CONFIG_PACKAGE_luci-app-homeproxy is not set/' .config
@@ -192,13 +193,7 @@ if [[ "$Dev" != *"nowifi"* ]]; then
     sed -i 's/^CONFIG_PACKAGE_ath11k-firmware-qcn9074-ddwrt=y$/CONFIG_PACKAGE_ath11k-firmware-qcn9074-ddwrt=n/' "$CONFIG_FILE"
     
     cp -f "$CONFIG_FILE" .config
-    # 复制来的 config 不含上面的递归依赖开关，需要重新应用后再 defconfig
-    sed -i 's/^CONFIG_PACKAGE_luci-app-homeproxy=.*/# CONFIG_PACKAGE_luci-app-homeproxy is not set/' .config
-    sed -i 's/^CONFIG_PACKAGE_sing-box-tiny=.*/# CONFIG_PACKAGE_sing-box-tiny is not set/' .config
-    sed -i 's/^CONFIG_PACKAGE_fwknopd=.*/# CONFIG_PACKAGE_fwknopd is not set/' .config
-    sed -i 's/^CONFIG_PACKAGE_squeezelite-custom=.*/# CONFIG_PACKAGE_squeezelite-custom is not set/' .config
-    sed -i 's/^CONFIG_PACKAGE_qt5base-gui=.*/# CONFIG_PACKAGE_qt5base-gui is not set/' .config
-    make defconfig
+    sed -i 's/+libffi//g' feeds/packages/libs/glib2/Makefile
     
     echo "编译无 WiFi 版本..."
     make -j$(($(nproc) + 1)) || make -j1 V=s
