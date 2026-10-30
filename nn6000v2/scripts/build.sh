@@ -126,7 +126,17 @@ modify_kernel_size() {
 modify_kernel_size
 
 cd "$BASE_PATH/../$BUILD_DIR"
-# Fix glib2 libffi dependency
+
+# glib2 在 immortalwrt master 中声明了 +libffi；配置未选中 libffi 时会报
+# "Package glib2 is missing dependencies for the following libraries: libffi.so.8"
+# 文件不存在时跳过：set -e 下 sed 读不到文件会以退出码 2 中断整个构建
+if [ -f feeds/packages/libs/glib2/Makefile ]; then
+    sed -i 's/+libffi//g' feeds/packages/libs/glib2/Makefile
+fi
+
+# CI 里没有 TTY：缺了这一步，make 会自己触发交互式 menuconfig 并失败
+make defconfig
+
 
 if [[ $Build_Mod == "debug" ]]; then
     exit 0
@@ -175,7 +185,7 @@ if [[ "$Dev" != *"nowifi"* ]]; then
     sed -i 's/^CONFIG_PACKAGE_ath11k-firmware-qcn9074-ddwrt=y$/CONFIG_PACKAGE_ath11k-firmware-qcn9074-ddwrt=n/' "$CONFIG_FILE"
     
     cp -f "$CONFIG_FILE" .config
-    sed -i 's/+libffi//g' feeds/packages/libs/glib2/Makefile
+    make defconfig
     
     echo "编译无 WiFi 版本..."
     make -j$(($(nproc) + 1)) || make -j1 V=s
