@@ -126,8 +126,10 @@ modify_kernel_size() {
 modify_kernel_size
 
 cd "$BASE_PATH/../$BUILD_DIR"
-# Fix glib2 libffi dependency
-sed -i 's/+libffi//g' feeds/packages/libs/glib2/Makefile
+
+# 不要删 glib2 的 +libffi 依赖：glib2-gobject 实际链接 libffi.so.8，
+# 删掉依赖只会在打包阶段报 "missing dependencies for the following libraries: libffi.so.8" 并中断编译。
+# 正确做法是保留依赖，并确保 CONFIG_PACKAGE_libffi=y（configs 里已有）。
 
 # Fix recursive dependency issues (scripts/config is a directory in this tree, use sed instead)
 sed -i 's/^CONFIG_PACKAGE_luci-app-homeproxy=.*/# CONFIG_PACKAGE_luci-app-homeproxy is not set/' .config
@@ -190,7 +192,13 @@ if [[ "$Dev" != *"nowifi"* ]]; then
     sed -i 's/^CONFIG_PACKAGE_ath11k-firmware-qcn9074-ddwrt=y$/CONFIG_PACKAGE_ath11k-firmware-qcn9074-ddwrt=n/' "$CONFIG_FILE"
     
     cp -f "$CONFIG_FILE" .config
-    sed -i 's/+libffi//g' feeds/packages/libs/glib2/Makefile
+    # 复制来的 config 不含上面的递归依赖开关，需要重新应用后再 defconfig
+    sed -i 's/^CONFIG_PACKAGE_luci-app-homeproxy=.*/# CONFIG_PACKAGE_luci-app-homeproxy is not set/' .config
+    sed -i 's/^CONFIG_PACKAGE_sing-box-tiny=.*/# CONFIG_PACKAGE_sing-box-tiny is not set/' .config
+    sed -i 's/^CONFIG_PACKAGE_fwknopd=.*/# CONFIG_PACKAGE_fwknopd is not set/' .config
+    sed -i 's/^CONFIG_PACKAGE_squeezelite-custom=.*/# CONFIG_PACKAGE_squeezelite-custom is not set/' .config
+    sed -i 's/^CONFIG_PACKAGE_qt5base-gui=.*/# CONFIG_PACKAGE_qt5base-gui is not set/' .config
+    make defconfig
     
     echo "编译无 WiFi 版本..."
     make -j$(($(nproc) + 1)) || make -j1 V=s
