@@ -126,24 +126,6 @@ modify_kernel_size() {
 modify_kernel_size
 
 cd "$BASE_PATH/../$BUILD_DIR"
-# Fix glib2 libffi dependency: remove libffi from DEPENDS and disable ffi in meson
-sed -i 's/+libffi//g' feeds/packages/libs/glib2/Makefile
-sed -i 's/HOST_BUILD_DEPENDS:=pcre2\/host libffi\/host libiconv-full\/host/HOST_BUILD_DEPENDS:=pcre2\/host libiconv-full\/host/' feeds/packages/libs/glib2/Makefile
-sed -i 's/MESON_ARGS += $(COMP_ARGS)/MESON_ARGS += $(COMP_ARGS) -Dffi=disabled/' feeds/packages/libs/glib2/Makefile
-sed -i 's/^CONFIG_PACKAGE_libffi=.*/# CONFIG_PACKAGE_libffi is not set/' .config
-
-# Fix recursive dependency issues (scripts/config is a directory in this tree, use sed instead)
-sed -i 's/^CONFIG_PACKAGE_luci-app-homeproxy=.*/# CONFIG_PACKAGE_luci-app-homeproxy is not set/' .config
-sed -i 's/^CONFIG_PACKAGE_sing-box-tiny=.*/# CONFIG_PACKAGE_sing-box-tiny is not set/' .config
-sed -i 's/^CONFIG_PACKAGE_fwknopd=.*/# CONFIG_PACKAGE_fwknopd is not set/' .config
-sed -i 's/^CONFIG_PACKAGE_squeezelite-custom=.*/# CONFIG_PACKAGE_squeezelite-custom is not set/' .config
-sed -i 's/^CONFIG_PACKAGE_qt5base-gui=.*/# CONFIG_PACKAGE_qt5base-gui is not set/' .config
-# Also explicitly unset them if they don't exist yet
-grep -q "^CONFIG_PACKAGE_luci-app-homeproxy" .config || echo "# CONFIG_PACKAGE_luci-app-homeproxy is not set" >> .config
-grep -q "^CONFIG_PACKAGE_sing-box-tiny" .config || echo "# CONFIG_PACKAGE_sing-box-tiny is not set" >> .config
-grep -q "^CONFIG_PACKAGE_fwknopd" .config || echo "# CONFIG_PACKAGE_fwknopd is not set" >> .config
-grep -q "^CONFIG_PACKAGE_squeezelite-custom" .config || echo "# CONFIG_PACKAGE_squeezelite-custom is not set" >> .config
-grep -q "^CONFIG_PACKAGE_qt5base-gui" .config || echo "# CONFIG_PACKAGE_qt5base-gui is not set" >> .config
 make defconfig
 
 if [[ $Build_Mod == "debug" ]]; then
@@ -193,7 +175,7 @@ if [[ "$Dev" != *"nowifi"* ]]; then
     sed -i 's/^CONFIG_PACKAGE_ath11k-firmware-qcn9074-ddwrt=y$/CONFIG_PACKAGE_ath11k-firmware-qcn9074-ddwrt=n/' "$CONFIG_FILE"
     
     cp -f "$CONFIG_FILE" .config
-    sed -i 's/+libffi//g' feeds/packages/libs/glib2/Makefile
+    make defconfig
     
     echo "编译无 WiFi 版本..."
     make -j$(($(nproc) + 1)) || make -j1 V=s
