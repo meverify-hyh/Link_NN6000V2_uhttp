@@ -102,11 +102,39 @@ fix_netfilter_kmod_clash() {
     echo "Netfilter kmod clash workaround applied successfully"
 }
 
+# VIKINGYFY/immortalwrt 主树里没有 package/libs/libffi，而它 feeds 里的 glib2 依赖 +libffi，
+# 结果打包时 glib2-gobject 报 "missing dependencies for libffi.so.8" 并中断。
+# 这里在 defconfig 之前把 libffi 包从 immortalwrt 上游注入到构建树。
+ensure_libffi() {
+    local bd="$BASE_PATH/../$BUILD_DIR"
+    if [ -f "$bd/package/libs/libffi/Makefile" ]; then
+        return 0
+    fi
+    if grep -rqs "Package/libffi" "$bd/feeds" 2>/dev/null; then
+        return 0
+    fi
+    echo ">>> 构建树缺少 libffi（glib2 依赖它），从 immortalwrt 上游注入..."
+    local tmp
+    tmp=$(mktemp -d)
+    if git clone --depth 1 --filter=blob:none --sparse https://github.com/immortalwrt/immortalwrt "$tmp/imm" >/dev/null 2>&1 \
+       && ( cd "$tmp/imm" && git sparse-checkout set package/libs/libffi >/dev/null 2>&1 ) \
+       && [ -f "$tmp/imm/package/libs/libffi/Makefile" ]; then
+        mkdir -p "$bd/package/libs"
+        cp -a "$tmp/imm/package/libs/libffi" "$bd/package/libs/"
+        echo ">>> libffi 注入完成：$(ls "$bd/package/libs/libffi")"
+    else
+        echo "!!! libffi 注入失败，glib2 打包仍会失败" >&2
+    fi
+    rm -rf "$tmp"
+}
 if [[ -d action_build ]]; then
     BUILD_DIR="action_build"
 fi
 
 "$BASE_PATH/scripts/update.sh" "$REPO_URL" "$REPO_BRANCH" "$BUILD_DIR" "$COMMIT_HASH"
+
+# VIKINGYFY 树缺 libffi，defconfig 前注入
+ensure_libffi
 
 apply_config
 fix_netfilter_kmod_clash
