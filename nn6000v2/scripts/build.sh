@@ -127,6 +127,15 @@ modify_kernel_size
 
 cd "$BASE_PATH/../$BUILD_DIR"
 # Fix glib2 libffi dependency
+sed -i 's/+libffi//g' feeds/packages/libs/glib2/Makefile
+
+# Fix recursive dependency issues
+./scripts/config --disable PACKAGE_luci-app-homeproxy
+./scripts/config --disable PACKAGE_sing-box-tiny
+./scripts/config --disable PACKAGE_fwknopd
+./scripts/config --disable PACKAGE_squeezelite-custom
+./scripts/config --disable PACKAGE_qt5base-gui
+make defconfig
 
 if [[ $Build_Mod == "debug" ]]; then
     exit 0
