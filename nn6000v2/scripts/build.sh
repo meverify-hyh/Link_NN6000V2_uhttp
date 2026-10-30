@@ -129,12 +129,18 @@ cd "$BASE_PATH/../$BUILD_DIR"
 # Fix glib2 libffi dependency
 sed -i 's/+libffi//g' feeds/packages/libs/glib2/Makefile
 
-# Fix recursive dependency issues
-./scripts/config --disable PACKAGE_luci-app-homeproxy
-./scripts/config --disable PACKAGE_sing-box-tiny
-./scripts/config --disable PACKAGE_fwknopd
-./scripts/config --disable PACKAGE_squeezelite-custom
-./scripts/config --disable PACKAGE_qt5base-gui
+# Fix recursive dependency issues (scripts/config is a directory in this tree, use sed instead)
+sed -i 's/^CONFIG_PACKAGE_luci-app-homeproxy=.*/# CONFIG_PACKAGE_luci-app-homeproxy is not set/' .config
+sed -i 's/^CONFIG_PACKAGE_sing-box-tiny=.*/# CONFIG_PACKAGE_sing-box-tiny is not set/' .config
+sed -i 's/^CONFIG_PACKAGE_fwknopd=.*/# CONFIG_PACKAGE_fwknopd is not set/' .config
+sed -i 's/^CONFIG_PACKAGE_squeezelite-custom=.*/# CONFIG_PACKAGE_squeezelite-custom is not set/' .config
+sed -i 's/^CONFIG_PACKAGE_qt5base-gui=.*/# CONFIG_PACKAGE_qt5base-gui is not set/' .config
+# Also explicitly unset them if they don't exist yet
+grep -q "^CONFIG_PACKAGE_luci-app-homeproxy" .config || echo "# CONFIG_PACKAGE_luci-app-homeproxy is not set" >> .config
+grep -q "^CONFIG_PACKAGE_sing-box-tiny" .config || echo "# CONFIG_PACKAGE_sing-box-tiny is not set" >> .config
+grep -q "^CONFIG_PACKAGE_fwknopd" .config || echo "# CONFIG_PACKAGE_fwknopd is not set" >> .config
+grep -q "^CONFIG_PACKAGE_squeezelite-custom" .config || echo "# CONFIG_PACKAGE_squeezelite-custom is not set" >> .config
+grep -q "^CONFIG_PACKAGE_qt5base-gui" .config || echo "# CONFIG_PACKAGE_qt5base-gui is not set" >> .config
 make defconfig
 
 if [[ $Build_Mod == "debug" ]]; then
